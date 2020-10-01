@@ -1,8 +1,9 @@
-## CompeNET: Geometric Deep Learning for Architecture 
-
-You can use the [editor on GitHub](https://github.com/CDInstitute/CompoNET.github.io/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+# CompeNET: Geometric Deep Learning for Architecture 
+## Authors
+Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, 2020
+alberto.tono@cd.institute
+cecilia.bolognesi@polimi.it
+amirhossein.ahmadnia@mail.polimi.it
 
 ### Abstract
 
