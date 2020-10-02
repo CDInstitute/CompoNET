@@ -1,9 +1,10 @@
-# CompeNET: Geometric Deep Learning for Architecture 
+# CompoNET: Geometric Deep Learning for Architecture 
 ## Authors
 Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, 2020
 alberto.tono@cd.institute
 cecilia.bolognesi@polimi.it
 amirhossein.ahmadnia@mail.polimi.it
+meher.shashwat@students.iiit.ac.in
 
 ### Abstract
 
