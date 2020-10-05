@@ -26,3 +26,13 @@ plt.imshow(img)
 plt.axis('off')
 plt.show()
 ```
+
+
+```
+@inproceedings{CompoNET,
+    title = {CompoNET: Geometric Deep Learning in Architecture },
+    author = {Alberto Tono, Meher Shashwat Nigam, Amirhossein Ahmadnia,Cecilia Bolognesi},
+    booktitle = {Reaach-Id 2020},
+    year = {2020}
+}
+```
