@@ -1,4 +1,6 @@
 # CompoNET: Geometric Deep Learning for Architecture 
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1W9A07851Tq3y_gXt9wM--vCk0US2CZ8G?usp=sharing)
 ## Authors
 Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (2020) <br/>
 <alberto.tono@cd.institute><br/>
