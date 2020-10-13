@@ -17,7 +17,9 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (202
 
 <br/>
 <br/>
-![Cover](Slide29.jpg)
+
+[![Cover](Slide29.jpg)]
+
 ```
 @inproceedings{CompoNET,
     title = {CompoNET: Geometric Deep Learning in Architecture },
