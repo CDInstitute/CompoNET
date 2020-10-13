@@ -9,7 +9,7 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (202
 <meher.shashwat@students.iiit.ac.in><br/>
 
 ### Video
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/https://youtu.be/IYhbSmMNbyU/0.jpg)](https://www.youtube.com/watch?v=IYhbSmMNbyU)
+[![CompoNET.JPG](https://img.youtube.com/vi/https://youtu.be/IYhbSmMNbyU/0.jpg)](https://www.youtube.com/watch?v=IYhbSmMNbyU)
 
 
 ### Abstract
