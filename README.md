@@ -9,7 +9,7 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (202
 <meher.shashwat@students.iiit.ac.in><br/>
 
 ### Video
-[![Cover](CompoNET.JPG)](https://www.youtube.com/watch?v=IYhbSmMNbyU)
+[![Cover](Slide1.jpg)](https://www.youtube.com/watch?v=IYhbSmMNbyU)
 
 
 ### Abstract
@@ -26,3 +26,4 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (202
     year = {2020}
 }
 ```
+[![Cover](Slide1=.jpg)]
