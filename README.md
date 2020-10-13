@@ -1,4 +1,4 @@
-# CompoNET: Geometric Deep Learning for Architecture 
+# CompoNET: a geometric deep learning approach in Architecture 
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1W9A07851Tq3y_gXt9wM--vCk0US2CZ8G?usp=sharing)
 ## Authors
