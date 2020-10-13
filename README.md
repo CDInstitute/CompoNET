@@ -26,4 +26,4 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (202
     year = {2020}
 }
 ```
-[![Cover](Slide1=.jpg)]
+[![Cover](Slide29.jpg)]
