@@ -8,7 +8,7 @@ Navigate to the ```dataset``` folder.
 
 ## Synthetic Buildings
 
-<img src="dataset/imgs/synthetic.png" width="500"/>
+<img src="imgs/synthetic.png" width="500"/>
 To create completely synthetic buildings use:
 
 ```
@@ -30,7 +30,7 @@ Make sure to adjust the camera in setup.blend if you choose different values.
 
 ## Buildings from existing .shp files:
 
-<img src="dataset/imgs/qgis_example1.png" width="900"/>
+<img src="imgs/qgis_example1.png" width="900"/>
 
 Use provided .gltf (or your own) to create separate .obj files for each building in .gltf:
 ```
