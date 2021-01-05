@@ -2,11 +2,12 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1W9A07851Tq3y_gXt9wM--vCk0US2CZ8G?usp=sharing)
 ## Authors
-Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam (2020) <br/>
+Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam, Stanislava Fedorova (2021) <br/>
 <alberto.tono@cd.institute><br/>
 <cecilia.bolognesi@polimi.it><br/>
 <amirhossein.ahmadnia@mail.polimi.it><br/>
 <meher.shashwat@students.iiit.ac.in><br/>
+<0.0stasya@gmail.com><br/>
 
 ### Video
 [![Cover](Slide1.jpg)](https://www.youtube.com/watch?v=IYhbSmMNbyU)
