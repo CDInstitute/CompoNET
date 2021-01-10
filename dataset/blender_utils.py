@@ -90,3 +90,4 @@ def gancio(v1, v2, axis, border1=0, border2=0):
 	v2.mesh.location[abs(1 - axis)] = coords1[abs(1 - axis)][border2] + \
 	                                  mapping[abs(1 - border2)] * np.diff(coords1[abs(1 - axis)]) + \
 	                                  (0.5 * np.diff(coords2[abs(1-axis)]) * mapping[border2])
+

@@ -8,85 +8,43 @@ import sys
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 
-from config import *
 from blender_utils import extrude, gancio, get_min_max
+from dataset_config import *
+from material import Material
 from module import *
 from shp2obj import Collection, deselect_all
-
-MIN_HEIGHT = 3.0
-MIN_WIDTH = 6.0
-MIN_LENGTH = 6.0
-
-MAX_HEIGHT = 30.0
-MAX_WIDTH = 30.0
-MAX_LENGTH = 30.0
+from volume import *
 
 
-class Factory:
+class BuildingFactory:
 	"""
 	Factory that produces volumes.
 	"""
 	def __init__(self):
-		self.min_width = MIN_WIDTH
-		self.min_length = MIN_LENGTH
-		self.min_height = MIN_HEIGHT
-		self.max_width = MAX_WIDTH
-		self.max_length = MAX_LENGTH
-		self.max_height = MAX_HEIGHT
 
-	def produce(self, scale=None):
+		self.mapping = {'Patio': (Patio, 4),
+			            'L': (LBuilding, 2),
+			            'C': (CBuilding, 3),
+			            'Single': (ComposedBuilding, 1),
+			            'Skyscraper': (Skyscraper, 1),
+			            'Closedpatio': (ClosedPatio, 2),
+			            'Equalpatio': (PatioEqual, 4)}
+		self.mapping = {x: y for x, y in self.mapping.items() if x in BUILDINGS}
+
+	def produce(self, name=None):
 		"""
 		Function that produces a volume based on the given scale.
 		:param scale: tuple (width, length, height)
 		:return: generated volume, Volume
 		"""
-		if scale is None:
-			return self._produce_random()
-		v = Volume(scale)
-		v.create()
-		return v
-
-	def _produce_random(self):
-		"""
-		Function that produces a volume based on random parameters.
-		:return: generated volume, Volume
-		"""
-		v = Volume(scale=(np.random.randint(self.min_length, self.max_length),
-		                  np.random.randint(self.min_width, self.max_width),
-		                  np.random.randint(self.min_height, self.max_height)))
-		return v
-
-
-class CollectionFactory:
-	"""
-	Class that generates a collection of volumes based on their number.
-	"""
-	def __init__(self):
-		self.volume_factory = Factory()
-
-	def produce(self, number=None):
-		"""
-		Function that produces a collection of volumes
-		:param number: number of volumes to compose the building of, int
-		:return: building, Collection of Volumes
-		"""
-		return self._produce(number)
-
-	def _produce(self, number):
-		"""
-		Function that produces a collection of volumes
-		:param number: number of volumes to compose the building of, int
-		if None will be chosen randomly from 1 to the MAX_VOLUMES in config.py
-		:return: building, Collection of Volumes
-		"""
-		c = Collection(Volume)
-		if not number:
-			number = np.random.randint(1, MAX_VOLUMES+1)
-
-		for _ in range(number):
-			c.add(self.volume_factory.produce())
-
-		return c
+		if name:
+			name = name.lower().capitalize()
+			assert name in list(self.mapping.keys()), "{} building typology " \
+			                                          "does not exist".format(name)
+		else:
+			name = np.random.choice(list(self.mapping.keys()))
+		_volumes = CollectionFactory().produce(number=self.mapping[name][1]).collection
+		return self.mapping[name][0](_volumes)
 
 
 class ComposedBuilding:
@@ -98,6 +56,31 @@ class ComposedBuilding:
 		                                  " got {}".format(type(volumes))
 		self.volumes = volumes
 
+	def demolish(self):
+		for v in self.volumes:
+			try:
+				deselect_all()
+				v.mesh.select_set(True)
+				bpy.ops.object.delete()
+			except Exception:
+				pass
+
+	def get_bb(self):
+		"""
+		Function that gets the bounding box of the Building
+		:return: bounding box, list of float
+		[width_from, height_from, width_to, height_to]
+		"""
+		x_min, y_min, x_max, y_max = list(get_min_max(self.volumes[0].mesh, 0)) + \
+		                             list(get_min_max(self.volumes[0].mesh, 1))
+		for v in self.volumes[1:]:
+			_bb = list(get_min_max(v.mesh, 0)) + \
+			      list(get_min_max(v.mesh, 1))
+			x_min, y_min = min(_bb[0], x_min), min(_bb[1], y_min)
+			x_max, y_max = max(_bb[2], x_max), max(_bb[3], y_max)
+		return [round(x_min, 3), round(y_min, 3), round(x_max, 3),
+		        round(y_max, 3)]
+
 	def make(self):
 		"""
 		Function that composes the building based on its typology.
@@ -105,6 +88,27 @@ class ComposedBuilding:
 		"""
 		self._correct_volumes()
 		return self.volumes
+
+	def save(self, filename='test', ext='obj'):
+		"""
+		Function that saves the building as a separate file.
+		:param filename: name of the file to write without extension, str,
+		default='test'
+		:param ext: file extension, str, default='obj'
+		:return:
+		"""
+		deselect_all()
+		for v in self.volumes:
+			v.mesh.select_set(True)
+		if not MODEL_SAVE in os.listdir(file_dir):
+			os.mkdir(file_dir + '/' + MODEL_SAVE)
+		if ext == 'obj':
+			bpy.ops.export_scene.obj(filepath='{}/Models/{}.{}'.format(file_dir,
+			                                                           filename,
+			                                                           ext),
+			                         use_selection=True)
+		else:
+			return NotImplementedError
 
 	def _correct_volumes(self):
 		for v in self.volumes:
@@ -323,109 +327,22 @@ class EBuilding(ComposedBuilding):
 		return self.volumes
 
 
-class Volume:
-	"""
-	Class that represents one volume of a building.
-	"""
-	def __init__(self, scale=(1.0, 1.0, 1.0), location=(0.0, 0.0, 0.0)):
-		assert len(location) == 3, "Expected 3 location coordinates," \
-		                           " got {}".format(len(location))
-		assert len(scale) == 3, "Expected 3 scale coordinates," \
-		                        " got {}".format(len(scale))
-
-		assert max([1 if (issubclass(x.__class__, int) or
-		                  issubclass(x.__class__, float)) else 0 for x in
-		            scale+location]) == 1, "Expected numeric tuples scale and location"
-
-		##############################################
-
-		self.height = float(max(MIN_HEIGHT, scale[2]))
-		self.width = float(max(MIN_WIDTH, scale[0]))
-		self.length = float(max(MIN_LENGTH, scale[1]))
-		self.position = location
-		self.name = ''
-		self.mesh = None
-
-	def create(self):
-		"""
-		Function that creates a mesh based on the input parameters.
-		:return:
-		"""
-
-		bpy.ops.mesh.primitive_plane_add(location=self.position)
-		bpy.ops.transform.resize(value=(self.length, self.width, 1.0))
-		bpy.context.selected_objects[0].name = 'volume'
-		self.name = bpy.context.selected_objects[0].name
-		self.mesh = bpy.data.objects[self.name]
-		self._nest()
-		self._extrude()
-		deselect_all()
-
-	def _extrude(self):
-		"""
-		Function that extrudes the plane in order to create a mesh.
-		:return:
-		"""
-		deselect_all()
-		if self.mesh:
-			extrude(self.mesh, self.height)
-
-	def _nest(self):
-		if not self.name in bpy.data.collections['Building'].objects:
-			bpy.data.collections['Building'].objects.link(
-					bpy.data.objects[self.name])
-
-
-class Renderer:
-	"""
-	Class that manages the scene rendering. Incomplete.
-	"""
-	def __init__(self):
-		0
-
-	def render(self):
-		self._render()
-
-	def _render(self):
-		"""
-		Function that renders the scene.
-		:return:
-		"""
-		bpy.data.scenes[self._scene_name].render.engine = 'CYCLES'
-		bpy.ops.render.render()
-
-	def _render_mask(self):
-		"""
-		Function that renders the scene as a one-channel mask.
-		:return:
-		"""
-		raise NotImplementedError
-
-	def _render_keypoints(self):
-		"""
-		Function that renders the scene as a one-channel mask of predefined
-		keypoints.
-		:return:
-		"""
-		raise NotImplementedError
-
-
 if __name__ == '__main__':
 	f = CollectionFactory()
-	collection = f.produce(number=3)
-	building = CBuilding(collection.collection)
+	collection = f.produce(number=1)
+	building = ComposedBuilding(collection.collection)
 	building.make()
 
-	axis = 1
-
-	for j, v in enumerate(collection.collection):
-
-		mod = GridApplier(Window)
-		w = Window()
-		w.connect(v, 1)
-		if j==0:
-			mod.apply(w, step=(3, 3), offset=(3.0, 10.0, 3.0, 1.0))
-		else:
-			mod.apply(w, step=(3, 3))
+	# axis = 1
+	#
+	# for j, v in enumerate(collection.collection):
+	#
+	# 	mod = GridApplier(Window)
+	# 	w = Window()
+	# 	w.connect(v, 1)
+	# 	if j==0:
+	# 		mod.apply(w, step=(4, 2), offset=(2.0, 2.0, 2.0, 1.0))
+	# 	else:
+	# 		mod.apply(w, step=(4, 2))
 
 

@@ -12,7 +12,7 @@ file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 
 stdout = io.StringIO()
-from config import *
+from dataset_config import *
 from blender_utils import gancio, get_min_max
 from shp2obj import Collection, deselect_all
 
@@ -29,10 +29,15 @@ class Connector:
 
 
 class Module:
-	def __init__(self, name='generic', scale=None):
+	def __init__(self, name='generic', scale=None, mask=(1.0, 0.0, 0.0)):
 		self.name = name
 		self.connector = None
 		self.scale = scale
+		assert issubclass(mask.__class__, list) or issubclass(mask.__class__, tuple) \
+		       or issubclass(mask.__class__, np.ndarray), "Expected mask to be an " \
+		                                            "array or a tuple, got {}".format(type(mask))
+		assert len(mask) == 3, "Expected mask to have 3 colors, got {}".format(len(mask))
+		self.mask = mask
 		self.mesh = self._create()
 		self.parent = self._nest()
 
@@ -42,8 +47,19 @@ class Module:
 			m.connect(self.connector.volume, self.connector.axis)
 		return m
 
+	def apply(self, material=None):
+		if material:
+			_material = MaterialFactory().produce(material)
+		else:
+			_material = MaterialFactory().produce()
+		self.mesh.active_material = _material.value
+
 	def connect(self, volume, axis):
 		self._connect(volume, axis)
+
+	def mask(self):
+		material = MaterialFactory().produce('mask', color=self.mask)
+		self.mesh.active_material = material.value
 
 	def position(self, position):
 		assert isinstance(position, list) or isinstance(position, tuple) or \
@@ -109,6 +125,9 @@ class ModuleFactory:
 	def __init__(self):
 		self.mapping = {'generic': Module,
 		                'window': Window}
+		self.mapping = {x:y for x,y in self.mapping.items() if x in MODULES or x=='generic'}
+		self.mask_colors = list(range(len(self.mapping)))
+		self._mask_colors()
 
 	def produce(self, name):
 		"""
@@ -117,9 +136,20 @@ class ModuleFactory:
 		:return: generated module, Module
 		"""
 		if name in list(self.mapping.keys()):
+			# mask = self.mask_colors[list(self.mapping.keys()).index(name)]
 			return self.mapping[name]()
 		else:
 			return self.mapping['generic']()
+
+	def _mask_colors(self):
+		if len(self.mask_colors) <= 3:
+			for i in range(len(self.mask_colors)):
+				self.mask_colors[i] = [0.0, 0.0, 0.0]
+				self.mask_colors[i][i] = 1.0
+		else:
+			# Distribute colors around the color circle
+			return NotImplementedError
+
 
 
 class ModuleApplier:
