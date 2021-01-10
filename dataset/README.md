@@ -16,21 +16,29 @@ Navigate to the ```dataset``` folder.
 To create completely synthetic buildings use:
 
 ```
-blender setup.blend --python generaotr.py
+blender setup.blend --python generator.py
 ```
 if you want blender to act n background use:
 ```
 blender --background setup.blend --python generator.py
 ```
 
+To generate a dataset choose your parameters in ```dataset_config.py``` and run:
+```
+blender --background setup.blend --python dataset.py
+```
 Note:
-if there are any specific parameters for your buildings (e.g. max and min height / width / length), you can provide them in ```config.py```. Default values adhere to international standards (min) and most common European values (max):
+if there are any specific parameters for your buildings (e.g. max and min height / width / length), you can provide them in ```dataset_config.py```. Default values adhere to international standards (min) and most common European values (max):
 
 * minimum height 3m
 * minimum length and width 6m
 * maximum length, width, height 30 m
 
 Make sure to adjust the camera in setup.blend if you choose different values.
+
+To add textures create a folder Yourmaterialname in Textures and add there Diffuse.png, Displacement.png and Normal.png
+
+Mask rendering is in process:)
 
 ## Buildings from existing .shp files:
 
