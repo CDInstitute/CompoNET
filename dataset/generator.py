@@ -1,4 +1,5 @@
 import bpy, bmesh
+from math import radians
 import numpy as np
 import os
 import random
@@ -6,74 +7,44 @@ import sys
 
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
-from config import *
-from blender_utils import get_min_max
+
+from blender_utils import extrude, gancio, get_min_max
+from dataset_config import *
+from material import Material
+from module import *
+from shp2obj import Collection, deselect_all
+from volume import *
 
 
-class Factory:
+class BuildingFactory:
 	"""
 	Factory that produces volumes.
 	"""
 	def __init__(self):
-		self.min_width = MIN_WIDTH
-		self.min_length = MIN_LENGTH
-		self.min_height = MIN_HEIGHT
-		self.max_width = MAX_WIDTH
-		self.max_length = MAX_LENGTH
-		self.max_height = MAX_HEIGHT
 
-	def produce(self, scale=(self.min_width, self.min_length, self.min_height)):
+		self.mapping = {'Patio': (Patio, 4),
+			            'L': (LBuilding, 2),
+			            'C': (CBuilding, 3),
+			            'Single': (ComposedBuilding, 1),
+			            'Skyscraper': (Skyscraper, 1),
+			            'Closedpatio': (ClosedPatio, 2),
+			            'Equalpatio': (PatioEqual, 4)}
+		self.mapping = {x: y for x, y in self.mapping.items() if x in BUILDINGS}
+
+	def produce(self, name=None):
 		"""
 		Function that produces a volume based on the given scale.
 		:param scale: tuple (width, length, height)
 		:return: generated volume, Volume
 		"""
-		v = Volume(scale)
-		v.create()
-		return v
-
-	def produce_random(self):
-		"""
-		Function that produces a volume based on random parameters.
-		:return: generated volume, Volume
-		"""
-		v = Volume(scale=(np.random.randint(self.min_length, self.max_length),
-		                  np.random.randint(self.min_width, self.max_width),
-		                  np.random.randint(self.min_height, self.max_height)))
-		v.create()
-		return v
-
-
-class CollectionFactory:
-	"""
-	Class that generates a collection of volumes based on their number.
-	"""
-	def __init__(self):
-		self.volume_factory = Factory()
-
-	def produce(self, number=None):
-		"""
-		Function that produces a collection of volumes
-		:param number: number of volumes to compose the building of, int
-		:return: building, Collection of Volumes
-		"""
-		return self._produce(number)
-
-	def _produce(self, number):
-		"""
-		Function that produces a collection of volumes
-		:param number: number of volumes to compose the building of, int
-		if None will be chosen randomly from 1 to the MAX_VOLUMES in config.py
-		:return: building, Collection of Volumes
-		"""
-		c = Collection(Volume)
-		if not number:
-			number = np.random.randint(1, MAX_VOLUMES+1)
-
-		for _ in range(number):
-			c.add(self.volume_factory.produce_random())
-
-		return c
+		if name:
+			name = name.lower().capitalize()
+			assert name in list(self.mapping.keys()), "{} building typology " \
+			                                          "does not exist".format(name)
+		else:
+			name = np.random.choice(list(self.mapping.keys()))
+		_volumes = CollectionFactory().produce(number=self.mapping[name][1]).collection
+		return self.mapping[name][0](_volumes)
 
 
 class ComposedBuilding:
@@ -85,12 +56,63 @@ class ComposedBuilding:
 		                                  " got {}".format(type(volumes))
 		self.volumes = volumes
 
+	def demolish(self):
+		for v in self.volumes:
+			try:
+				deselect_all()
+				v.mesh.select_set(True)
+				bpy.ops.object.delete()
+			except Exception:
+				pass
+
+	def get_bb(self):
+		"""
+		Function that gets the bounding box of the Building
+		:return: bounding box, list of float
+		[width_from, height_from, width_to, height_to]
+		"""
+		x_min, y_min, x_max, y_max = list(get_min_max(self.volumes[0].mesh, 0)) + \
+		                             list(get_min_max(self.volumes[0].mesh, 1))
+		for v in self.volumes[1:]:
+			_bb = list(get_min_max(v.mesh, 0)) + \
+			      list(get_min_max(v.mesh, 1))
+			x_min, y_min = min(_bb[0], x_min), min(_bb[1], y_min)
+			x_max, y_max = max(_bb[2], x_max), max(_bb[3], y_max)
+		return [round(x_min, 3), round(y_min, 3), round(x_max, 3),
+		        round(y_max, 3)]
+
 	def make(self):
 		"""
 		Function that composes the building based on its typology.
 		:return:
 		"""
+		self._correct_volumes()
 		return self.volumes
+
+	def save(self, filename='test', ext='obj'):
+		"""
+		Function that saves the building as a separate file.
+		:param filename: name of the file to write without extension, str,
+		default='test'
+		:param ext: file extension, str, default='obj'
+		:return:
+		"""
+		deselect_all()
+		for v in self.volumes:
+			v.mesh.select_set(True)
+		if not MODEL_SAVE in os.listdir(file_dir):
+			os.mkdir(file_dir + '/' + MODEL_SAVE)
+		if ext == 'obj':
+			bpy.ops.export_scene.obj(filepath='{}/Models/{}.{}'.format(file_dir,
+			                                                           filename,
+			                                                           ext),
+			                         use_selection=True)
+		else:
+			return NotImplementedError
+
+	def _correct_volumes(self):
+		for v in self.volumes:
+			v.create()
 
 
 class LBuilding(ComposedBuilding):
@@ -99,18 +121,134 @@ class LBuilding(ComposedBuilding):
 	"""
 	def __init__(self, volumes):
 		ComposedBuilding.__init__(self, volumes)
-		assert len(volumes) == 2, "L-shaped bulding can be composed of 2 volumes" \
-		                          "only, got {}".format(len(volumes))
+
+	def make(self):
+		# add rotation if len > width (or vice versa)
+		self._correct_volumes()
+		gancio(self.volumes[0], self.volumes[1], 0, 0, 0)
+		return self.volumes
+
+	def _correct_volumes(self):
+
+		if np.random.random() < 0.5:  # same height
+			_height = max(min(self.volumes[0].height,
+			                  min(self.volumes[0].width * 3, MAX_HEIGHT)),
+			              MIN_HEIGHT)
+			for v in self.volumes:
+				v.height = _height
+
+		for v in self.volumes:
+			v.create()
+		self.volumes = sorted(self.volumes, key=lambda x: x.length,
+		                      reverse=True)
+
+
+class CBuilding(LBuilding):
+	def __init__(self, volumes):
+		LBuilding.__init__(self, volumes)
+		assert len(
+			volumes) == 3, "C-shaped bulding can be composed of 3 volumes" \
+		                   "only, got {}".format(len(volumes))
+
+	def make(self):
+		self._correct_volumes()
+		for v in self.volumes[1:]:
+			if v.width < v.length:
+				v.mesh.rotation_euler[2] = radians(90)
+
+		gancio(self.volumes[0], self.volumes[1], 0, 1, 0)
+		gancio(self.volumes[0], self.volumes[2], 0, 0, 0)
+		return self.volumes
+
+
+class Patio(ComposedBuilding):
+	"""
+	Class that represents an L-shaped building.
+	"""
+	def __init__(self, volumes):
+		ComposedBuilding.__init__(self, volumes)
+		assert len(volumes) in [2, 4], "Patio bulding can be composed of 4 " \
+		                               "volumes only, got {}".format(len(volumes))
+		self.width = [3, 12]
+		self.length = [6, 20]
 
 	def make(self):
 
-		x_min, x_max = get_min_max(self.volumes[0].mesh, 0)  # width
-		y_min, y_max = get_min_max(self.volumes[0].mesh, 1)  # length
-
-		self.volumes[1].mesh.location[0] = x_min + (self.volumes[1].length)
-		self.volumes[1].mesh.location[1] = y_min + (self.volumes[1].width)
+		self._correct_volumes()
+		if np.random.random() < 0.5:
+			# circular linkage between buildings
+			for i, _v in enumerate(self.volumes[:-1]):
+				if i % 2 == 0:
+					self.volumes[i + 1].mesh.rotation_euler[2] = radians(90)
+				if i == 0:
+					gancio(_v, self.volumes[i + 1], 0, 1, 1)
+				elif i == 1:
+					gancio(_v, self.volumes[i + 1], 1, 1, 0)
+				elif i == 2:
+					gancio(_v, self.volumes[i + 1], 0, 0, 0)
+		else:
+			# cap linkage between buildings
+			for i, _v in enumerate(self.volumes[:-1]):
+				if i % 2 == 0:
+					self.volumes[i + 1].mesh.rotation_euler[2] = radians(90)
+				if i == 0:
+					gancio(_v, self.volumes[i + 1], 1, 1, 0)
+				elif i == 1:
+					gancio(_v, self.volumes[i + 1], 1, 1, 0)
+				elif i == 2:
+					gancio(_v, self.volumes[i + 1], 1, 0, 1)
 
 		return self.volumes
+
+	def _correct_volumes(self):
+		for v in self.volumes:
+			v.width = min(max(v.width, self.width[0]), self.width[1])
+			v.length = v.width * (np.random.random() + 1.5)
+			v.height = max(min(v.height, min(v.width * 3, MAX_HEIGHT)), MIN_HEIGHT)
+			v.create()
+		self.volumes = sorted(self.volumes, key=lambda x: x.length)
+
+
+class PatioEqual(Patio):
+	"""
+	Class that represents a Patio building with equal height volumes.
+	"""
+
+	def __init__(self, volumes):
+		Patio.__init__(self, volumes)
+
+	def _correct_volumes(self):
+		_height = max(min(self.volumes[0].height, min(self.volumes[0].width * 3,
+		                                              MAX_HEIGHT)), MIN_HEIGHT)
+		for v in self.volumes:
+			v.width = min(max(v.width, self.width[0]), self.width[1])
+			v.length = v.width * (np.random.random() + 1.5)
+			v.height = _height
+			v.create()
+		self.volumes = sorted(self.volumes, key=lambda x: x.length)
+
+
+class ClosedPatio(Patio):
+	"""
+	Class that represents a Patio building with equal height volumes.
+	"""
+
+	def __init__(self, volumes):
+		Patio.__init__(self, volumes)
+		assert len(self.volumes) == 2, "Expected 2 volumes for Closed Patio, " \
+		                               "got {}".format(len(self.volumes))
+
+	def _correct_volumes(self):
+		for v in self.volumes:
+			v.width = min(max(v.width, self.width[0]), self.width[1])
+			v.length = v.width * (np.random.random() + 1.5)
+			v.height = max(min(v.height, min(v.width * 3, MAX_HEIGHT)),
+		              MIN_HEIGHT)
+			v.create()
+
+		for v in self.volumes[:2]:
+			v1 = Factory().produce(scale=(v.width, v.length, v.height))
+			self.volumes.append(v1)
 
 
 class TBuilding(ComposedBuilding):
@@ -124,7 +262,7 @@ class TBuilding(ComposedBuilding):
 		                          "only, got {}".format(len(volumes))
 
 	def make(self):
-
+		self._correct_volumes()
 		x_min, x_max = get_min_max(self.volumes[0].mesh, 0)  # width
 		y_min, y_max = get_min_max(self.volumes[0].mesh, 1)  # length
 
@@ -142,6 +280,23 @@ class TBuilding(ComposedBuilding):
 		return self.volumes
 
 
+class Skyscraper(ComposedBuilding):
+	"""
+	Class that represents a Skyscraper building with height significantly larger
+	than width or length of the building.
+	"""
+
+	def __init__(self, volumes):
+		ComposedBuilding.__init__(self, volumes)
+
+	def _correct_volumes(self):
+		for _v in self.volumes:
+			_v.height = np.random.randint(100, 200)
+			_v.length = max(30, _v.length)
+			_v.width = max(30, _v.width)
+			_v.create()
+
+
 class EBuilding(ComposedBuilding):
 	"""
 	Class that represents a E-shaped building with random locations of the
@@ -152,6 +307,7 @@ class EBuilding(ComposedBuilding):
 
 	def make(self):
 
+		self._correct_volumes()
 		x_min, x_max = get_min_max(self.volumes[0].mesh, 0)  # width
 		y_min, y_max = get_min_max(self.volumes[0].mesh, 1)  # length
 
@@ -171,121 +327,22 @@ class EBuilding(ComposedBuilding):
 		return self.volumes
 
 
-class Volume:
-	"""
-	Class that represents one volume of a building.
-	"""
-	def __init__(self, scale=(1.0, 1.0, 1.0), location=(0.0, 0.0, 0.0)):
-		assert len(location) == 3, "Expected 3 location coordinates," \
-		                           " got {}".format(len(location))
-		assert len(scale) == 3, "Expected 3 scale coordinates," \
-		                        " got {}".format(len(scale))
-
-		assert max([1 if (issubclass(x.__class__, int) or
-		                  issubclass(x.__class__, float)) else 0 for x in
-		            scale+location]) == 1, "Expected numeric tuples scale and location"
-
-		##############################################
-
-		self.height = float(max(MIN_HEIGHT, scale[2]))
-		self.width = float(max(MIN_WIDTH, scale[0]))
-		self.length = float(max(MIN_LENGTH, scale[1]))
-		self.position = location
-		self.name = ''
-		self.mesh = None
-
-	def create(self):
-		"""
-		Function that creates a mesh based on the input parameters.
-		:return:
-		"""
-		bpy.ops.mesh.primitive_plane_add(enter_editmode=True, location=self.position)
-		bpy.ops.transform.resize(value=(self.length, self.width, 1.0))
-		self.name = bpy.data.objects[-1].name
-		self.mesh = bpy.data.objects[self.name]
-		self._extrude()
-
-	def _extrude(self):
-		"""
-		Function that extrudes the plane in order to create a mesh.
-		:return:
-		"""
-		deselect_all()
-		if self.mesh:
-			self.mesh.select_set(True)
-			bpy.ops.object.mode_set(mode='EDIT')
-			bpy.ops.mesh.select_mode(type='FACE')  # Change to face selection
-			bpy.ops.mesh.select_all(action='SELECT')  # Select all faces
-
-			bm = bmesh.new()
-			bm = bmesh.from_edit_mesh(bpy.context.object.data)
-
-			# Extude Bmesh
-			for f in bm.faces:
-				face = f.normal
-			r = bmesh.ops.extrude_face_region(bm, geom=bm.faces[:])
-			verts = [e for e in r['geom'] if isinstance(e, bmesh.types.BMVert)]
-			TranslateDirection = face * -self.height  # Extrude Strength/Length
-			bmesh.ops.translate(bm, vec=TranslateDirection, verts=verts)
-
-			# Update & Destroy Bmesh
-			bmesh.update_edit_mesh(
-				bpy.context.object.data)  # Write the bmesh back to the mesh
-			bm.free()  # free and prevent further access
-
-			# Flip normals
-			bpy.ops.mesh.select_all(action='SELECT')
-			bpy.ops.mesh.flip_normals()
-
-			# At end recalculate UV
-			bpy.ops.mesh.select_all(action='SELECT')
-			bpy.ops.uv.smart_project()
-
-			# Switch back to Object at end
-			bpy.ops.object.mode_set(mode='OBJECT')
-
-			# Origin to center
-			bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-
-
-class Renderer:
-	"""
-	Class that manages the scene rendering. Incomplete.
-	"""
-	def __init__(self):
-		0
-
-	def render(self):
-		self._render()
-
-	def _render(self):
-		"""
-		Function that renders the scene.
-		:return:
-		"""
-		bpy.data.scenes[self._scene_name].render.engine = 'CYCLES'
-		bpy.ops.render.render()
-
-	def _render_mask(self):
-		"""
-		Function that renders the scene as a one-channel mask.
-		:return:
-		"""
-		raise NotImplementedError
-
-	def _render_keypoints(self):
-		"""
-		Function that renders the scene as a one-channel mask of predefined
-		keypoints.
-		:return:
-		"""
-		raise NotImplementedError
-
-
 if __name__ == '__main__':
 	f = CollectionFactory()
-	collection = f.produce()
-	building = EBuilding(collection.collection)
+	collection = f.produce(number=1)
+	building = ComposedBuilding(collection.collection)
 	building.make()
+
+	# axis = 1
+	#
+	# for j, v in enumerate(collection.collection):
+	#
+	# 	mod = GridApplier(Window)
+	# 	w = Window()
+	# 	w.connect(v, 1)
+	# 	if j==0:
+	# 		mod.apply(w, step=(4, 2), offset=(2.0, 2.0, 2.0, 1.0))
+	# 	else:
+	# 		mod.apply(w, step=(4, 2))
 
 

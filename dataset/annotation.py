@@ -1,6 +1,13 @@
 import bpy
 import json
 import numpy as np
+import os
+import sys
+
+file_dir = os.path.dirname(__file__)
+sys.path.append(file_dir)
+
+from dataset_config import *
 
 
 class Annotation:
@@ -14,40 +21,41 @@ class Annotation:
 		self.full = []
 		self._clean()
 
-	def add(self, name, model, bb=None):
+	def add(self, building, name, model):
 		"""
 		Function that adds a model's annotation to the full dataset annotation.
+		:param building: building to add to json, Building class
 		:param name: name of the image file, str
 		:param model: name of the model .obj file, str
-		:param bb: bounding box of the model, list or tuple or np.array
-		[width_from, height_from, width_to, height_to]
 		:return:
 		"""
 		assert isinstance(name, str)
 
-		if bb:
-			assert isinstance(bb, list) or isinstance(bb, tuple) or \
-			       isinstance(bb, np.ndarray), "Expected bounding box as an " \
-			                                   "array, got {}".format(type(bb))
-			assert len(bb) == 4, "Expected bounding box to have 4 elements, " \
-			                     "got {}".format(len(bb))
-
-		self.content['img'] = name
+		self.content['img'] += name
 		self.content['mask'] += name.split('/')[-1]
-		self.content['model'] = model
+		self.content['model'] += model
 
 		try:
 			self.content['cam_position'] = list(bpy.data.objects['Camera'].location)
+			self.content['cam_position'] = [round(x, 3) for x in
+			                                self.content['cam_position']]
 		except Exception:
 			pass
 		try:
-			self.content['focal_length'] = bpy.data.cameras['Camera'].lens
+			self.content['focal_length'] = round(bpy.data.cameras['Camera'].lens, 3)
+
 		except Exception:
 			pass
 
+		for v in building.volumes:
+			try:
+				self.content['material'].append(v.mesh.active_material.name.split('.')[0])
+			except Exception:
+				pass
+		self.content['material'] = list(set(self.content['material']))
 		self.content['img_size'] = (bpy.data.scenes[0].render.resolution_y,
 		                            bpy.data.scenes[0].render.resolution_x)
-		self.content['bbox'] = list(bb)
+		self.content['bbox'] = building.get_bb()
 		self.full.append(self.content)
 		self._clean()
 
@@ -68,13 +76,13 @@ class Annotation:
 		Function that returns the annotation template to its default form.
 		:return:
 		"""
-		self.content = {'img': '',
+		self.content = {'img': IMG_SAVE + '/',
 		                'category': 'building',
 		                'img_size': (256, 256),
 		                '2d_keypoints': [],
 		                'mask': 'masks/',
 		                'img_source': 'synthetic',
-		                'model': '',
+		                'model': MODEL_SAVE + '/',
 		                'model_raw': 0,
 		                'model_source': 'synthetic',
 		                'trans_mat': 0,
@@ -84,5 +92,6 @@ class Annotation:
 		                'truncated': False,
 		                'occluded': False,
 		                'slightly_occluded': False,
-		                'bbox': [0.0, 0.0, 0.0, 0.0]}
+		                'bbox': [0.0, 0.0, 0.0, 0.0],
+		                'material': []}
 

@@ -1,6 +1,10 @@
 # Synthetic Dataset Generator
 
-This is a tool that generates synthetic buildings of different typologies. To use it, first of all, you would need [Blender](https://www.blender.org/download/)>=2.90. After installation make sure to add blender as an Environment variable. To use the package:
+This is a tool that generates synthetic buildings of different typologies. 
+The framework is structured as follows. Class Building is composed of several Volumes. This gives the initial envelope of a building. Each Volume can have several Modules applied to it. By modules here we intend small architectural details as balconies, windows, doors, stairs etc. The framework was built to be extendable, so the user can define her/his Building typology, Volume shape and Modules as well as their placement rules.
+<img src="imgs/Building_dataset_uml.png" width="600"/>
+
+To use it, first of all, you would need [Blender](https://www.blender.org/download/)>=2.90. After installation make sure to add blender as an Environment variable. To use the package:
 ```
 git clone https://github.com/CDInstitute/CompoNET
 ```
@@ -12,21 +16,29 @@ Navigate to the ```dataset``` folder.
 To create completely synthetic buildings use:
 
 ```
-blender setup.blend --python generaotr.py
+blender setup.blend --python generator.py
 ```
 if you want blender to act n background use:
 ```
-blender --background setup.blend --python generaotr.py
+blender --background setup.blend --python generator.py
 ```
 
+To generate a dataset choose your parameters in ```dataset_config.py``` and run:
+```
+blender --background setup.blend --python dataset.py
+```
 Note:
-if there are any specific parameters for your buildings (e.g. max and min height / width / length), you can provide them in ```config.py```. Default values adhere to international standards (min) and most common European values (max):
+if there are any specific parameters for your buildings (e.g. max and min height / width / length), you can provide them in ```dataset_config.py```. Default values adhere to international standards (min) and most common European values (max):
 
 * minimum height 3m
 * minimum length and width 6m
 * maximum length, width, height 30 m
 
 Make sure to adjust the camera in setup.blend if you choose different values.
+
+To add textures create a folder Yourmaterialname in Textures and add there Diffuse.png, Displacement.png and Normal.png
+
+Mask rendering is in process:)
 
 ## Buildings from existing .shp files:
 
