@@ -1,14 +1,22 @@
 # Synthetic Dataset Generator
 
-This is a tool that generates synthetic buildings of different typologies. 
-The framework is structured as follows. Class Building is composed of several Volumes. This gives the initial envelope of a building. Each Volume can have several Modules applied to it. By modules here we intend small architectural details as balconies, windows, doors, stairs etc. The framework was built to be extendable, so the user can define her/his Building typology, Volume shape and Modules as well as their placement rules.
-<img src="imgs/Building_dataset_uml.png" width="600"/>
+<img src="imgs/illustration.gif" width="1000"/>
 
-To use it, first of all, you would need [Blender](https://www.blender.org/download/)>=2.90. After installation make sure to add blender as an Environment variable. To use the package:
+This is a tool that generates a dataset of synthetic buildings of different typologies. The generated data includes:
+
+* Mesh files of generated buildings, ```.obj``` format
+* Rendered images of the mesh, ```.png``` format
+* Rendered segmentation masks, ```.png``` format
+* Point cloud files, ```.ply``` format (the number of points by default is 2048, can be changed in ```dataset_config.py```)
+
+## How To Use
+
+* Install [Blender](https://www.blender.org/download/)>=2.90. After installation make sure to add blender as an Environment variable. 
+* Download the package as a .zip file or:
 ```
 git clone https://github.com/CDInstitute/CompoNET
 ```
-Navigate to the ```dataset``` folder.
+*Navigate to the ```dataset``` folder.
 
 ## Synthetic Buildings
 
@@ -16,23 +24,44 @@ Navigate to the ```dataset``` folder.
 To create completely synthetic buildings use:
 
 ```
-blender setup.blend --python generaotr.py
+blender setup.blend --python dataset.py
 ```
-if you want blender to act n background use:
-```
-blender --background setup.blend --python generator.py
-```
+Unfortunately, it is not possible to use Blender in background mode as it will not render the image masks.
 
 Note:
-if there are any specific parameters for your buildings (e.g. max and min height / width / length), you can provide them in ```config.py```. Default values adhere to international standards (min) and most common European values (max):
+all the parameters related to the dataset (including any specific parameters for your buildings (e.g. max and min height / width / length)) are to be provided in ```dataset_config.py```. Default values adhere to international standards (min) and most common European values (max):
 
 * minimum height 3m
 * minimum length and width 6m
 * maximum length, width, height 30 m
+Other values to set:
+* number of dataset samples
+* rendered image dimensions
+* number of points in the point clouds
+* paths to store the generated data
 
-Make sure to adjust the camera in setup.blend if you choose different values.
+### Annotation structure
 
-## Buildings from existing .shp files:
+{'img': 'images/0.png',
+ 'category': 'building',
+'img_size': (256, 256),
+'2d_keypoints': [],
+'mask': 'masks/0.png',
+ 'img_source': 'synthetic',
+ 'model':  'models/0.obj',
+ 'point_cloud': 'PointCloud/0.ply',
+ 'model_source': 'synthetic',
+ 'trans_mat': 0,
+ 'focal_length': 35.0,
+ 'cam_position': (0.0, 0.0, 0.0),
+ 'inplane_rotation': 0,
+ 'truncated': False,
+ 'occluded': False,
+ 'slightly_occluded': False,
+ 'bbox': [0.0, 0.0, 0.0, 0.0],
+ 'material': ['concrete', 'brick']}
+
+## Buildings from the existing .shp files:
 
 <img src="imgs/qgis_example1.png" width="900"/>
 
