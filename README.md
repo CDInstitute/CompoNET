@@ -1,4 +1,4 @@
-# CompoNET: a geometric deep learning approach in Architecture 
+# A Geometric Deep Learning Framework in Architecture. 
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1W9A07851Tq3y_gXt9wM--vCk0US2CZ8G?usp=sharing)
 ## Authors
@@ -23,10 +23,10 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam, Sta
 
 ```
 @inproceedings{CompoNET,
-    title = {CompoNET: Geometric Deep Learning in Architecture },
-    author = {Alberto Tono, Meher Shashwat Nigam, Amirhossein Ahmadnia,Cecilia Bolognesi},
-    booktitle = {Reaach-Id 2020},
-    year = {2020}
+    title = {A Geometric Deep Learning Framework in Architecture},
+    author = {Alberto Tono, Meher Shashwat Nigam, Amirhossein Ahmadnia,Stanislava Fedorova, Cecilia Bolognesi},
+    booktitle = {Reaach-Id 2021},
+    year = {2021}
 }
 ```
 
