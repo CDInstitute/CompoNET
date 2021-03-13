@@ -1,6 +1,6 @@
 import bpy, bmesh
 from datetime import datetime
-from math import radians
+from math import ceil, radians
 import numpy as np
 import os
 import random
@@ -15,6 +15,8 @@ from dataset_config import *
 from generator import BuildingFactory
 from material import MaterialFactory
 from module import *
+from point_cloud import PointCloud
+from renderer import Renderer
 from shp2obj import Collection, deselect_all
 
 
@@ -40,9 +42,25 @@ class Dataset:
 					if not _monomaterial:
 						mat = self.material_factory.produce()
 					v.apply(mat)
+
+					for module_name in MODULES:
+						for side in range(2):
+							mod = GridApplier(ModuleFactory().mapping[module_name])
+							module = ModuleFactory().produce(module_name)
+							module.connect(v, side)
+							step = (np.random.randint(ceil(module.scale[0]), 6),
+							        np.random.randint(ceil(module.scale[0]), 6))
+							mod.apply(module, step=step, offset=(2.0, 2.0, 2.0, 1.0))
+
 			self.json.add(building, '{}.png'.format(i), '{}.obj'.format(i))
-			building.save(filename=str(i))
+			# building.save(filename=str(i))
+			renderer = Renderer(mode=0)
+			renderer.render(filename='building_{}'.format(i))
+			building.save(i)
+			building.save(i, ext='ply')
 			building.demolish()
+			cloud = PointCloud()
+			cloud.make(i)
 
 
 	def write(self):
