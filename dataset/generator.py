@@ -2,8 +2,12 @@ import bpy, bmesh
 from math import radians
 import numpy as np
 import os
+
 import random
 import sys
+
+sys.path.append("D:\ProgramFiles\Anaconda\envs\py37\Lib\site-packages")
+from pyntcloud import PyntCloud
 
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
@@ -12,6 +16,8 @@ from blender_utils import extrude, gancio, get_min_max
 from dataset_config import *
 from material import Material
 from module import *
+from point_cloud import PointCloud
+from renderer import Renderer
 from shp2obj import Collection, deselect_all
 from volume import *
 
@@ -56,11 +62,20 @@ class ComposedBuilding:
 		                                  " got {}".format(type(volumes))
 		self.volumes = volumes
 
+	# def demolish(self):
+	# 	for v in self.volumes:
+	# 		try:
+	# 			deselect_all()
+	# 			v.mesh.select_set(True)
+	# 			bpy.ops.object.delete()
+	# 		except Exception:
+	# 			pass
+
 	def demolish(self):
-		for v in self.volumes:
+		for _mesh in bpy.data.collections['Building'].objects:
 			try:
 				deselect_all()
-				v.mesh.select_set(True)
+				_mesh.select_set(True)
 				bpy.ops.object.delete()
 			except Exception:
 				pass
@@ -106,7 +121,11 @@ class ComposedBuilding:
 			bpy.ops.export_scene.obj(filepath='{}/Models/{}.{}'.format(file_dir,
 			                                                           filename,
 			                                                           ext),
-			                         use_selection=True)
+			                         use_selection=False)
+		elif ext == 'ply':
+			bpy.ops.export_mesh.ply(
+				filepath='{}/{}/{}.{}'.format(file_dir, CLOUD_SAVE, filename, ext),
+				use_selection=False)
 		else:
 			return NotImplementedError
 
@@ -328,21 +347,44 @@ class EBuilding(ComposedBuilding):
 
 
 if __name__ == '__main__':
-	f = CollectionFactory()
-	collection = f.produce(number=1)
-	building = ComposedBuilding(collection.collection)
-	building.make()
 
-	# axis = 1
-	#
-	# for j, v in enumerate(collection.collection):
-	#
-	# 	mod = GridApplier(Window)
-	# 	w = Window()
-	# 	w.connect(v, 1)
-	# 	if j==0:
-	# 		mod.apply(w, step=(4, 2), offset=(2.0, 2.0, 2.0, 1.0))
-	# 	else:
-	# 		mod.apply(w, step=(4, 2))
+	NUM_IMAGES = 1
+	for image in range(NUM_IMAGES):
+		f = CollectionFactory()
+		collection = f.produce(number=np.random.randint(1, 4))
+		building = ComposedBuilding(collection.collection)
+		building.make()
+
+		axis = 1
+
+		for j, v in enumerate(collection.collection):
+
+			mod = GridApplier(Window)
+			w = Window()
+			w.connect(v, 1)
+			step = (np.random.randint(1, 6), np.random.randint(1, 6))
+			if j == 0:
+				mod.apply(w, step=step, offset=(2.0, 2.0, 2.0, 1.0))
+			else:
+				mod.apply(w, step=step)
+
+			w = Window()
+			w.connect(v, 0, 0)
+			step = (np.random.randint(1, 6), np.random.randint(1, 6))
+			if j == 0:
+				mod.apply(w, step=step, offset=(2.0, 2.0, 2.0, 1.0))
+			else:
+				mod.apply(w, step=step)
+
+		renderer = Renderer(mode=0)
+		renderer.render(filename='building_{}'.format(image))
+		building.save(image)
+		building.save(image, ext='ply')
+		building.demolish()
+		cloud = PointCloud()
+		cloud.make(image)
+		# cloud = PyntCloud.from_file("Models/{}.obj".format(image))
+		# cloud.to_file("{}.ply".format(image))
+		# cloud.to_file("{}.npz".format(image))
 
 

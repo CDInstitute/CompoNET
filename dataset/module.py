@@ -13,19 +13,38 @@ sys.path.append(file_dir)
 
 stdout = io.StringIO()
 from dataset_config import *
-from blender_utils import gancio, get_min_max
+from blender_utils import *
 from shp2obj import Collection, deselect_all
 
 
+class IdAssigner:
+	"""
+	Class that assigns an instance id based on the module type.
+	"""
+	def __init__(self):
+		self.mapping = {x: y for (x, y) in zip(MODULES, range(2, len(MODULES) + 2))}
+
+	def make(self, name: str) -> int:
+		"""
+		Function that returns an id based on the module type. Numbering starts from
+		1 since 0 is the building envelope.
+		:param name: name of the module, str
+		:return: id, int
+		"""
+		assert name in MODULES, "Expected name to be in MODULES, got {}".format(name)
+		return self.mapping[name]
+
+
 class Connector:
-	def __init__(self, module, volume, axis):
+	def __init__(self, module, volume, axis, side=0):
 		self.module = module
 		self.axis = axis
+		self.side = side
 		self.volume = volume
 		self._connect()
 
 	def _connect(self):
-		gancio(self.volume, self.module, self.axis, 0, 1)
+		gancio(self.volume, self.module, self.axis, self.side, 1)
 
 
 class Module:
@@ -37,9 +56,11 @@ class Module:
 		       or issubclass(mask.__class__, np.ndarray), "Expected mask to be an " \
 		                                            "array or a tuple, got {}".format(type(mask))
 		assert len(mask) == 3, "Expected mask to have 3 colors, got {}".format(len(mask))
-		self.mask = mask
+		# self.mask = mask
 		self.mesh = self._create()
 		self.parent = self._nest()
+		self._assign_id()
+		self._triangulate()
 
 	def __copy__(self):
 		m = self.__class__(self.name, scale=self.scale)
@@ -54,12 +75,12 @@ class Module:
 			_material = MaterialFactory().produce()
 		self.mesh.active_material = _material.value
 
-	def connect(self, volume, axis):
-		self._connect(volume, axis)
+	def connect(self, volume, axis, side=0):
+		self._connect(volume, axis, side)
 
-	def mask(self):
-		material = MaterialFactory().produce('mask', color=self.mask)
-		self.mesh.active_material = material.value
+	# def mask(self):
+	# 	material = MaterialFactory().produce('mask', color=self.mask)
+	# 	self.mesh.active_material = material.value
 
 	def position(self, position):
 		assert isinstance(position, list) or isinstance(position, tuple) or \
@@ -77,8 +98,12 @@ class Module:
 		with redirect_stdout(stdout), redirect_stderr(stdout):
 			bpy.ops.object.delete()
 
-	def _connect(self, volume, axis):
-		self.connector = self.ModuleConnector(self, volume, axis)
+	def _assign_id(self):
+		self.mesh["inst_id"] = IdAssigner().make(self.name)
+		self.mesh.pass_index = IdAssigner().make(self.name)
+
+	def _connect(self, volume, axis, side):
+		self.connector = self.ModuleConnector(self, volume, axis, side)
 
 	def _create(self):
 		# rule how connects to mesh
@@ -93,13 +118,20 @@ class Module:
 		bpy.data.collections[self.name].objects.link(bpy.data.objects[self.mesh.name])
 		return bpy.data.collections[self.name]
 
+	def _triangulate(self):
+		deselect_all()
+		if self.mesh:
+			select(self.mesh)
+			bpy.ops.object.modifier_add(type='TRIANGULATE')
+			bpy.ops.object.modifier_apply()
+
 	class ModuleConnector(Connector):
-		def __init__(self, module, volume, axis):
-			Connector.__init__(self, module, volume, axis)
+		def __init__(self, module, volume, axis, side):
+			Connector.__init__(self, module, volume, axis, side)
 
 
 class Window(Module):
-	def __init__(self, name='window', scale=(1.5, 0.05, 1.5)):
+	def __init__(self, name: str='window', scale: tuple=(1.5, 0.05, 1.5)):
 		Module.__init__(self, name, scale)
 
 	def _create(self):
@@ -109,13 +141,13 @@ class Window(Module):
 		return bpy.context.selected_objects[0]
 
 	class ModuleConnector(Connector):
-		def __init__(self, module, volume, axis):
-			Connector.__init__(self, module, volume, axis)
+		def __init__(self, module: Module, volume, axis: bool, side):
+			Connector.__init__(self, module, volume, axis, side)
 
 		def _connect(self):
 			if self.axis == 0:
-				self.module.mesh.rotation_euler = math.radians(90)
-			gancio(self.volume, self.module, self.axis, 0, 1)
+				self.module.mesh.rotation_euler[2] = math.radians(90)
+			gancio(self.volume, self.module, self.axis, self.side, 1)
 
 
 class ModuleFactory:
@@ -125,11 +157,10 @@ class ModuleFactory:
 	def __init__(self):
 		self.mapping = {'generic': Module,
 		                'window': Window}
-		self.mapping = {x:y for x,y in self.mapping.items() if x in MODULES or x=='generic'}
+		self.mapping = {x: y for x, y in self.mapping.items() if x in MODULES or x == 'generic'}
 		self.mask_colors = list(range(len(self.mapping)))
-		self._mask_colors()
 
-	def produce(self, name):
+	def produce(self, name: str) -> object:
 		"""
 		Function that produces a module based on its name.
 		:param name: name of the module to produce, str, should be in mapping
@@ -140,16 +171,6 @@ class ModuleFactory:
 			return self.mapping[name]()
 		else:
 			return self.mapping['generic']()
-
-	def _mask_colors(self):
-		if len(self.mask_colors) <= 3:
-			for i in range(len(self.mask_colors)):
-				self.mask_colors[i] = [0.0, 0.0, 0.0]
-				self.mask_colors[i][i] = 1.0
-		else:
-			# Distribute colors around the color circle
-			return NotImplementedError
-
 
 
 class ModuleApplier:

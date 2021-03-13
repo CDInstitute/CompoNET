@@ -12,7 +12,7 @@ MAX_VOLUMES = 4
 # Choose building typologies to be produced
 BUILDINGS = ['Patio', 'L', 'C', 'Single', 'Skyscraper', 'Closedpatio', 'Equalpatio']
 
-SIZE = 2  # dataset size
+SIZE = 10  # dataset size
 
 use_materials = True  # apply materials to the facades of the buildings, bool
 
@@ -21,8 +21,13 @@ MATERIAL_PROB = 0.7  # Probability of all the volumes of one building to be of t
 use_modules = True
 MODULES = ['window']
 
+POINTS = 2048  # points to be samples from the mesh to get a point cloud
+# 2048 in ModelNET
+
+IMAGE_SIZE = (500, 500)
 MODEL_SAVE = 'Models'
 IMG_SAVE = 'Images'
 MASK_SAVE = 'Masks'
+CLOUD_SAVE = 'PointCloud'
 
 ENGINE = 'CYCLES'

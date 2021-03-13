@@ -33,6 +33,7 @@ class Annotation:
 
 		self.content['img'] += name
 		self.content['mask'] += name.split('/')[-1]
+		self.content['point_cloud'] += name.split('/')[-1]
 		self.content['model'] += model
 
 		try:
@@ -78,11 +79,12 @@ class Annotation:
 		"""
 		self.content = {'img': IMG_SAVE + '/',
 		                'category': 'building',
-		                'img_size': (256, 256),
+		                'img_size': IMAGE_SIZE,
 		                '2d_keypoints': [],
 		                'mask': 'masks/',
 		                'img_source': 'synthetic',
 		                'model': MODEL_SAVE + '/',
+		                'point_cloud': CLOUD_SAVE + '/',
 		                'model_raw': 0,
 		                'model_source': 'synthetic',
 		                'trans_mat': 0,
