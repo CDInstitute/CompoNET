@@ -13,9 +13,9 @@ class Material:
 	"""
 	Class that represents a material object in Blender.
 	"""
-	def __init__(self, name, filename='material'):
+	def __init__(self, name):
 		self.name = name.lower().capitalize()  # name of the material and its texture folder
-		self.filename = filename
+		self.filename = 'material'
 		self._path = file_dir + '/Textures/{}.blend'.format(self.filename)
 		self._add = '\\Material\\'
 		self.value = self._load()  # loads material into the scene
@@ -53,7 +53,10 @@ class Material:
 		try:
 			bpy.ops.image.open(filepath=file_dir + '/Textures/{}/{}.png'.
 			                   format(self.name, map_type.capitalize()))
-			return bpy.data.images[-2]
+			_images = [x.filepath for x in bpy.data.images]
+			return bpy.data.images[_images.index('//Textures'
+			                                     '\\{}\\{}.png'.format(self.name,
+			                                                               map_type))]
 		except Exception as e:
 			print('Failed to load {} texture of {}'.format(map_type, self.name))
 			print(repr(e))

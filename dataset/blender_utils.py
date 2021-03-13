@@ -91,3 +91,7 @@ def gancio(v1, v2, axis, border1=0, border2=0):
 	                                  mapping[abs(1 - border2)] * np.diff(coords1[abs(1 - axis)]) + \
 	                                  (0.5 * np.diff(coords2[abs(1-axis)]) * mapping[border2])
 
+def select(_volume):
+	_volume.select_set(True)
+	bpy.context.view_layer.objects.active = _volume
+

@@ -8,7 +8,7 @@ import sys
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 
-from blender_utils import extrude, gancio, get_min_max
+from blender_utils import *
 from dataset_config import *
 from material import Material
 from module import *
@@ -129,7 +129,10 @@ class Volume:
 		self.mesh = bpy.data.objects[self.name]
 		self._nest()
 		self._extrude()
+		self.mesh["inst_id"] = 1  # instance id for the building envelope
+		self.mesh.pass_index = 1
 		deselect_all()
+		self._triangulate()
 
 	def _extrude(self):
 		"""
@@ -141,9 +144,18 @@ class Volume:
 			extrude(self.mesh, self.height)
 
 	def _nest(self):
-		if not self.name in bpy.data.collections['Building'].objects:
+		names = [x.name for x in bpy.data.collections['Building'].objects]
+		if not self.name in names:
 			bpy.data.collections['Building'].objects.link(
 					bpy.data.objects[self.name])
+
+	def _triangulate(self):
+		deselect_all()
+		if self.mesh:
+			select(self.mesh)
+			bpy.ops.object.modifier_add(type='TRIANGULATE')
+			bpy.ops.object.modifier_apply()
+
 
 
 if __name__ == '__main__':
