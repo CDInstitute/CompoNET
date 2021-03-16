@@ -20,7 +20,6 @@ git clone https://github.com/CDInstitute/CompoNET
 
 ## Synthetic Buildings
 
-<img src="imgs/synthetic.png" width="500"/>
 To create completely synthetic buildings use:
 
 ```
