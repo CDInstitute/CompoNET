@@ -1,5 +1,7 @@
-# A Geometric Deep Learning Framework in Architecture. 
+# Limitations and Review of Geometric Deep Learning Algorithms for Monocular 3D Reconstruction in Architecture
+. 
 
+[Paper REAACH-ID](http://ojs.francoangeli.it/_omp/index.php/oa/catalog/book/686)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1W9A07851Tq3y_gXt9wM--vCk0US2CZ8G?usp=sharing)
 ## Authors
 Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam, Stanislava Fedorova (2021) <br/>
