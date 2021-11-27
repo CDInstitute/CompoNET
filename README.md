@@ -26,7 +26,7 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam, Sta
 
 ```
 @inproceedings{CompoNET,
-    title = {A Geometric Deep Learning Framework in Architecture},
+    title = {Limitations and Review of Geometric Deep Learning Algorithms for Monocular 3D Reconstruction in Architecture},
     author = {Alberto Tono, Meher Shashwat Nigam, Amirhossein Ahmadnia,Stanislava Fedorova, Cecilia Bolognesi},
     booktitle = {Reaach-Id 2021},
     year = {2021}
