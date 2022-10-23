@@ -27,11 +27,14 @@ Alberto Tono, Cecilia Bolognesi, Amirhossein Ahmadnia, Meher Shashwat Nigam, Sta
 ```
 @inproceedings{CompoNET,
     title = {Limitations and Review of Geometric Deep Learning Algorithms for Monocular 3D Reconstruction in Architecture},
-    author = {Alberto Tono, Meher Shashwat Nigam, Amirhossein Ahmadnia,Stanislava Fedorova, Cecilia Bolognesi},
+    author = {Tono, Alberto and Shashwat Nigam, Meher and  Ahmadnia, Amirhossein and Fedorova, Stanislava and  Bolognesi, Cecilia},
     booktitle = {Reaach-Id 2021},
     year = {2021}
+    doi={doi.org/10.3280/oa-686.68}
 }
 ```
+   
+}
 
 References 
 - https://github.com/nschor/CompoNet
